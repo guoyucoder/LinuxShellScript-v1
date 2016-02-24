@@ -1,8 +1,8 @@
 
-sudo sh /etc/init.d/check_request.sh "tomcat" &
-sudo sh /etc/init.d/check_request.sh "jetty" &
+sudo sh /etc/init.d/check_request.sh &
 
 restartPath=/etc/init.d/jettyRestart
+
 restartPath=/etc/init.d/tomcatRestart
 
 

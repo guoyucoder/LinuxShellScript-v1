@@ -38,7 +38,7 @@ checkRunningProcess_main(){
 		echo "$(mydate) $1 Running"
 	else
 		echo "$(mydate) $1 Not Running"
-		if [ -f "$1Restart" ];then
+		if [ -f "./$1Restart" ];then
 			sudo service $1 stop;
 			sleep 10;
 			sudo service $1 start;
