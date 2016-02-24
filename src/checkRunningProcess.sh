@@ -10,16 +10,20 @@ emails=("2531868871@qq.com" "chuxiong.ren@chenghong.cc" "1270040457@qq.com" "guo
 #提示语,主题
 subject="(测试)服务器已经自动重启了"
 
+#请求间隔(秒)
+sheepTime=60
+
 #发送邮件
 mySendMail(){
-    local emailBody="$(mydate), 监控shell脚本检测到 $serviceName 服务器非正常关机了,所以把 $serviceName 服务器重新打开了."
+    local emailBody="$(mydate), $subject, 监控shell脚本检测到 $1 服务器非正常关机了,所以把 $1 服务器重启了."
     echo $emailBody
     for email in ${emails[@]};
     do
-        echo "sendMail To=$email"
-        echo $emailBody | mail -s "$serviceName $subject" $email;
+        echo "$(mydate), sendMail To=$email"
+        echo $emailBody | mail -s "$1 $subject" $email;
     done
 }
+
 
 mydate()
 {
@@ -28,41 +32,41 @@ mydate()
 
 #检查
 checkRunningProcess_main(){
-    echo "1111111"
-    while true;
-    do
-        local ps_out="ps -ef | grep $serviceName | grep -v grep | wc -l"
-        if [ "$ps_out" != 0 ];then
-            echo "$serviceName Running"
-        else
-            echo "$serviceName Not Running"
-            if [ -f "$serviceNameRestart" ];then
-                sudo service "$serviceName" stop;
-                sudo service "$serviceName" start;
-                $(mySendMail);
-            fi
+	trap `echo 服务重启出了问题` 6
+	local ps_out=`ps -ef | grep $1 | grep -v grep | grep -v "tail -f" | wc -l`
+	if [ "$ps_out" != 0 ];then
+		echo "$(mydate) $1 Running"
+	else
+		echo "$(mydate) $1 Not Running"
+		if [ -f "$1Restart" ];then
+			sudo service $1 stop;
+			sleep 10;
+			sudo service $1 start;
+			mySendMail $1;
+		else
+			echo "$(mydate) $1Restart 文件不存在, 所以判断为正常情况下关的服务器, 所以没有进行服务器重启操作"
         fi
-        sleep 60;
-    done;
+    fi
+    echo
 }
+
 
 #获得日志保存目录
 getSaveLogsPath(){
-	local saveFilePath="$0_logs"
-	saveFilePath=${saveFilePath/'.sh'/}
-	if [ ! -d $saveFilePath ];then
-		mkdir $saveFilePath
-	fi
-	echo "$saveFilePath/";
+    local saveFilePath="$0_logs"
+    saveFilePath=${saveFilePath/'.sh'/}
+    if [ ! -d $saveFilePath ];then
+        mkdir $saveFilePath
+    fi
+    echo "$saveFilePath/";
 }
 
-echo "333333"
-serviceName="tomcat"
-$(checkRunningProcess_main)
-# >> "$(getSaveLogsPath)$serviceName_"$(date +%Y-%m-%d).log
 
-echo "44444"
-
-serviceName="jetty"
-&"$(checkRunningProcess_main)" >> "$(getSaveLogsPath)$serviceName_"$(date +%Y-%m-%d).log &
+#----------执行入口----------------------------
+while true;
+do
+    sleep $sheepTime;
+    checkRunningProcess_main "tomcat" >> "$(getSaveLogsPath)tomcat_"$(date +%Y-%m-%d).log
+    checkRunningProcess_main "jetty" >> "$(getSaveLogsPath)jetty_"$(date +%Y-%m-%d).log
+done;
 

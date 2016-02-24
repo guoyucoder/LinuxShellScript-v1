@@ -40,7 +40,7 @@ fault_run()
         for email in ${emails[@]};
         do
                 #发送邮件
-                echo "sendMail To=$email"
+                echo "$(mydate), sendMail To=$email"
                 echo $emailBody | mail -s "$subject" $email;
         done
 };
